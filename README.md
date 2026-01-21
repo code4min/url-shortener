@@ -34,7 +34,7 @@ POST /api/shorten
 **Request**
 json
 {
-  "longUrl": "https://www.google.com",
+  "longUrl": "https://www.somewebsitename.com",
   "expiresAt": null
 }
 **Response**
