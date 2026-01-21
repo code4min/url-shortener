@@ -37,10 +37,12 @@ json
   "longUrl": "https://www.somewebsitename.com",
   "expiresAt": null
 }
+
 **Response**
 {
   "shortUrl": "http://localhost:8080/b"
 }
+
 **Redirect**
 GET /{shortKey}
 
