@@ -35,7 +35,7 @@ POST /api/shorten
 json
 {
   "longUrl": "https://www.somewebsitename.com",
-  "expiresAt": null
+  "expiresAt": (expiry-date)
 }
 
 **Response**
