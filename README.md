@@ -3,7 +3,7 @@
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-blue)
-![License](https://img.shields.io/github/license/<code4min>/url-shortener)
+
 
 A **backend-first URL shortener** built with **Java, Spring Boot, and PostgreSQL**, designed with clean architecture and scalability in mind.
 
