@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.time.Duration;
-import java.util.concurrent.TimeUnit;
+
 
 @Component
 public class RateLimitInterceptor implements HandlerInterceptor{
@@ -40,16 +40,16 @@ public class RateLimitInterceptor implements HandlerInterceptor{
 	        String ip = extractClientIp(request);
 	        String key = buildKey(ip);
 
-	        // Increment the counter — if key doesn't exist, Redis creates it starting at 1
+	        
 	        Long count = redisTemplate.opsForValue().increment(key);
 
 	        if (count == null) {
-	            // Redis unavailable — fail open (allow request) to avoid blocking legitimate users
+	            
 	            log.warn("Redis unavailable during rate limit check for IP '{}', failing open", ip);
 	            return true;
 	        }
 
-	        // On first increment, set the expiry window
+	       
 	        if (count == 1) {
 	            redisTemplate.expire(key, Duration.ofSeconds(windowSeconds));
 	            log.debug("Rate limit window started for IP '{}', key='{}'", ip, key);
@@ -68,18 +68,17 @@ public class RateLimitInterceptor implements HandlerInterceptor{
 	    }
 
 	    private String extractClientIp(HttpServletRequest request) {
-	        // Check X-Forwarded-For header first (set by proxies/load balancers)
+	        
 	        String forwarded = request.getHeader("X-Forwarded-For");
 	        if (forwarded != null && !forwarded.isBlank()) {
-	            // X-Forwarded-For can be a comma-separated list — first IP is the real client
+	            
 	            return forwarded.split(",")[0].trim();
 	        }
 	        return request.getRemoteAddr();
 	    }
 
 	    private String buildKey(String ip) {
-	        // Window slot = current epoch second divided by window size
-	        // This gives the same number for all requests within the same window
+	        
 	        long windowSlot = System.currentTimeMillis() / 1000 / windowSeconds;
 	        return KEY_PREFIX + ip + ":" + windowSlot;
 	    }

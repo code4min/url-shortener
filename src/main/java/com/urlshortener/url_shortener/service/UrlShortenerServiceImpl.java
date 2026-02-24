@@ -24,10 +24,13 @@ public class UrlShortenerServiceImpl implements UrlShortenerService{
 	private final UrlMappingRepository repository;
 
 	private final CacheService cacheService;
+	
+	private final AnalyticsService analyticsService;
 
-    public UrlShortenerServiceImpl(UrlMappingRepository repository, CacheService cacheService) {
+    public UrlShortenerServiceImpl(UrlMappingRepository repository, CacheService cacheService, AnalyticsService analyticsService) {
         this.repository = repository;
         this.cacheService = cacheService;
+        this.analyticsService = analyticsService;
     }
 
     @Override
@@ -51,7 +54,7 @@ public class UrlShortenerServiceImpl implements UrlShortenerService{
         saved.setShortKey(shortKey);
         UrlMapping finalSaved = repository.save(saved);
 
-        // Prime the cache on creation so first redirect is also a cache hit
+        
         Duration ttl = computeTtl(finalSaved);
         cacheService.put(shortKey, longUrl, ttl);
         log.debug("Cached '{}' → '{}' with TTL {}", shortKey, longUrl, ttl);
@@ -63,14 +66,14 @@ public class UrlShortenerServiceImpl implements UrlShortenerService{
     @Transactional
     public UrlMapping resolveShortKey(String shortKey) {
 
-        // 1. Check cache first
         Optional<String> cachedUrl = cacheService.get(shortKey);
         log.debug("Cache lookup for key '{}': {}", shortKey, cachedUrl.isPresent() ? "HIT" : "MISS");
 
         if (cachedUrl.isPresent()) {
             log.debug("Serving '{}' from cache", shortKey);
-            // Single UPDATE, no SELECT — no need to fetch the full entity just to increment
-            repository.incrementClickCount(shortKey);
+
+            
+            analyticsService.recordClick(shortKey);
 
             UrlMapping cached = new UrlMapping();
             cached.setLongUrl(cachedUrl.get());
@@ -78,24 +81,21 @@ public class UrlShortenerServiceImpl implements UrlShortenerService{
             return cached;
         }
 
-        // 2. Cache miss — hit the database
         log.debug("Cache miss — querying database for key '{}'", shortKey);
         UrlMapping mapping = repository
                 .findByShortKeyAndIsActiveTrue(shortKey)
                 .orElseThrow(() -> new UrlNotFoundException("Short URL not found"));
 
-        // 3. Check expiry
         if (mapping.getExpiresAt() != null &&
                 mapping.getExpiresAt().isBefore(LocalDateTime.now())) {
-            cacheService.evict(shortKey); // defensive eviction
+            cacheService.evict(shortKey);
             throw new UrlExpiredException("Short URL has expired");
         }
 
-        // 4. Increment click count
-        mapping.setClickCount(mapping.getClickCount() + 1);
-        repository.save(mapping);
+        
+        analyticsService.recordClick(shortKey);
 
-        // 5. Populate cache for future requests
+        
         Duration ttl = computeTtl(mapping);
         cacheService.put(shortKey, mapping.getLongUrl(), ttl);
         log.debug("Cached '{}' → '{}' with TTL {}", shortKey, mapping.getLongUrl(), ttl);
@@ -108,7 +108,7 @@ public class UrlShortenerServiceImpl implements UrlShortenerService{
             Duration ttl = Duration.between(LocalDateTime.now(), mapping.getExpiresAt());
             return ttl.isNegative() ? Duration.ZERO : ttl;
         }
-        // null means no expiry — CacheService will use its default TTL
+        
         return null;
     }
 

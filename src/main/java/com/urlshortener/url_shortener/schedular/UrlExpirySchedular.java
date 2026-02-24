@@ -31,7 +31,7 @@ public class UrlExpirySchedular {
         LocalDateTime now = LocalDateTime.now();
         log.debug("Expiry job triggered at {}", now);
 
-        // Step 1 — fetch expired records so we have shortKeys for Redis eviction
+        
         List<UrlMapping> expired = repository.findExpiredActiveUrls(now);
 
         if (expired.isEmpty()) {
@@ -41,13 +41,13 @@ public class UrlExpirySchedular {
 
         log.info("Expiry job — found {} expired URL(s), processing...", expired.size());
 
-        // Step 2 — evict each from Redis first
+       
         expired.forEach(mapping -> {
             cacheService.evict(mapping.getShortKey());
             log.debug("Evicted Redis key for shortKey='{}'", mapping.getShortKey());
         });
 
-        // Step 3 — bulk deactivate in DB
+        
         int deactivated = repository.deactivateExpiredUrls(now);
         log.info("Expiry job — deactivated {} URL(s) in DB", deactivated);
     }

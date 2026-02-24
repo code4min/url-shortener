@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.*;
 @SpringBootApplication
 @EnableCaching
 @EnableScheduling
+@EnableAsync
 public class UrlShortenerApplication {
 
 	public static void main(String[] args) {

@@ -19,11 +19,11 @@ public interface UrlMappingRepository extends JpaRepository<UrlMapping, Long> {
     @Query("UPDATE UrlMapping u SET u.clickCount = u.clickCount + 1 WHERE u.shortKey = :shortKey AND u.isActive = true")
     void incrementClickCount(@Param("shortKey") String shortKey);
     
-    // Fetch all expired but still active URLs — we need shortKeys for Redis eviction
+    
     @Query("SELECT u FROM UrlMapping u WHERE u.expiresAt IS NOT NULL AND u.expiresAt < :now AND u.isActive = true")
     List<UrlMapping> findExpiredActiveUrls(@Param("now") LocalDateTime now);
 
-    // Bulk deactivate all expired URLs in one UPDATE
+    
     @Modifying
     @Query("UPDATE UrlMapping u SET u.isActive = false WHERE u.expiresAt IS NOT NULL AND u.expiresAt < :now AND u.isActive = true")
     int deactivateExpiredUrls(@Param("now") LocalDateTime now);
